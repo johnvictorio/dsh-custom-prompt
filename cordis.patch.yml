@@ -1,0 +1,3 @@
+- insert:
+    - id: custom-prompt
+      name: dsh-custom-prompt
