@@ -1,6 +1,6 @@
 {
   "name": "dsh-custom-prompt",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "DSH plugin that injects an editable section into the global system prompt, with a settings page to customize it.",
   "type": "module",
   "main": "index.js",

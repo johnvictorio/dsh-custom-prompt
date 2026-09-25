@@ -160,7 +160,7 @@ window.__ModuleLoader__.load({
       const slots = ctx.get('slots')
       if (!React || !slots) return
 
-      const scope = ctx.settingsScope.bind({ namespace: NAMESPACE })
+      const scope = ctx.configForms.get(NAMESPACE)
 
       slots.inject('settings.section', () => slots.register({
         name: 'settings.section',
@@ -170,7 +170,7 @@ window.__ModuleLoader__.load({
       }, () => React.createElement(PromptForm, { scope })))
     }
 
-    const inject = ['slots', 'settingsScope']
+    const inject = ['slots', 'configForms']
 
     exports.apply = apply
     exports.inject = inject
