@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Custom Prompt",
+    "description": "Adds an editable section to the global system prompt, with a settings page to customize it."
+  }
+}

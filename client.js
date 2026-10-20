@@ -6,14 +6,16 @@ window.__ModuleLoader__.load({
     const React = require('react')
 
     const NAMESPACE = 'custom-prompt'
+    const LOCALE_NS = 'settings.customPrompt'
 
-    const LABELS = {
+    const en = {
       nav: 'Custom Prompt',
       heading: 'Custom Prompt',
       intro: 'Adds one section to the system prompt of every agent in this process, on every agent preset. Disabled by default.',
       enabled: 'Enabled',
       text: 'Prompt text',
       textHint: 'Avoid {{braces}} other than {{customnote}}; unknown references make prompt rendering fail.',
+      placeholder: 'Add your prompt text here, then enable this section.',
       save: 'Save',
       reset: 'Reset',
       saving: 'Saving...',
@@ -22,6 +24,24 @@ window.__ModuleLoader__.load({
       failed: 'Save failed: ',
       loading: 'Loading settings...',
       readonly: 'This browser cannot write settings.',
+    }
+
+    const zh = {
+      nav: '自定义提示词',
+      heading: '自定义提示词',
+      intro: '向本进程中每个 Agent 的系统提示词添加一个段落，适用于所有 Agent 预设。默认关闭。',
+      enabled: '启用',
+      text: '提示词内容',
+      textHint: '除 {{customnote}} 外，请勿使用其他 {{花括号}}；未知引用会导致提示词渲染失败。',
+      placeholder: '在此输入提示词，然后启用此段落。',
+      save: '保存',
+      reset: '重置',
+      saving: '保存中...',
+      saved: '已保存',
+      rejected: '主机拒绝了写入，已恢复为已存储的值。',
+      failed: '保存失败：',
+      loading: '正在加载设置...',
+      readonly: '此浏览器无法写入设置。',
     }
 
     const row = { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }
@@ -47,10 +67,15 @@ window.__ModuleLoader__.load({
       return hint
     }
 
-    function PromptForm({ scope }) {
+    function statusText(t, status) {
+      if (!status.key) return ''
+      return t(status.key) + (status.detail || '')
+    }
+
+    function PromptForm({ scope, t }) {
       const [snap, setSnap] = React.useState(scope.getSnapshot())
       const [draft, setDraft] = React.useState(null)
-      const [status, setStatus] = React.useState({ kind: 'idle', message: '' })
+      const [status, setStatus] = React.useState({ kind: 'idle', key: null, detail: '' })
 
       React.useEffect(() => scope.subscribe(() => {
         setSnap(scope.getSnapshot())
@@ -58,7 +83,7 @@ window.__ModuleLoader__.load({
       }), [])
 
       if (snap.status === 'loading') {
-        return React.createElement('div', { style: hint }, LABELS.loading)
+        return React.createElement('div', { style: hint }, t('loading'))
       }
 
       const stored = snap.value && typeof snap.value === 'object' ? snap.value : null
@@ -69,38 +94,38 @@ window.__ModuleLoader__.load({
       const writable = snap.writable === true
 
       const save = async () => {
-        setStatus({ kind: 'busy', message: LABELS.saving })
+        setStatus({ kind: 'busy', key: 'saving', detail: '' })
         try {
           await scope.set('enabled', enabled === true)
           await scope.set('text', typeof text === 'string' ? text : '')
         } catch (error) {
-          setStatus({ kind: 'error', message: LABELS.failed + String((error && error.message) || error) })
+          setStatus({ kind: 'error', key: 'failed', detail: String((error && error.message) || error) })
           return
         }
         const after = scope.getSnapshot()
         const next = after.value && typeof after.value === 'object' ? after.value : {}
         const landed = next.enabled === (enabled === true) && next.text === (typeof text === 'string' ? text : '')
         setStatus(landed
-          ? { kind: 'saved', message: LABELS.saved }
-          : { kind: 'error', message: LABELS.rejected })
+          ? { kind: 'saved', key: 'saved', detail: '' }
+          : { kind: 'error', key: 'rejected', detail: '' })
       }
 
       const reset = async () => {
-        setStatus({ kind: 'busy', message: LABELS.saving })
+        setStatus({ kind: 'busy', key: 'saving', detail: '' })
         try {
           await scope.unset('enabled')
           await scope.unset('text')
-          setStatus({ kind: 'saved', message: LABELS.saved })
+          setStatus({ kind: 'saved', key: 'saved', detail: '' })
         } catch (error) {
-          setStatus({ kind: 'error', message: LABELS.failed + String((error && error.message) || error) })
+          setStatus({ kind: 'error', key: 'failed', detail: String((error && error.message) || error) })
         }
       }
 
       return React.createElement('div', {
         style: { padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px' },
       },
-        React.createElement('h3', { style: { margin: '0', fontSize: '15px' } }, LABELS.heading),
-        React.createElement('div', { style: hint }, LABELS.intro),
+        React.createElement('h3', { style: { margin: '0', fontSize: '15px' } }, t('heading')),
+        React.createElement('div', { style: hint }, t('intro')),
         React.createElement('label', { style: row },
           React.createElement('input', {
             type: 'checkbox',
@@ -108,17 +133,17 @@ window.__ModuleLoader__.load({
             disabled: !writable,
             onChange: (event) => {
               setDraft({ enabled: event.target.checked, text })
-              setStatus({ kind: 'idle', message: '' })
+              setStatus({ kind: 'idle', key: null, detail: '' })
             },
           }),
-          LABELS.enabled,
+          t('enabled'),
         ),
-        React.createElement('label', { style: { fontSize: '14px' } }, LABELS.text),
+        React.createElement('label', { style: { fontSize: '14px' } }, t('text')),
         React.createElement('textarea', {
           value: text,
           disabled: !writable,
           rows: 12,
-          placeholder: 'Add your prompt text here, then enable this section.',
+          placeholder: t('placeholder'),
           style: {
             width: '100%',
             boxSizing: 'border-box',
@@ -133,32 +158,36 @@ window.__ModuleLoader__.load({
           },
           onChange: (event) => {
             setDraft({ enabled, text: event.target.value })
-            setStatus({ kind: 'idle', message: '' })
+            setStatus({ kind: 'idle', key: null, detail: '' })
           },
         }),
-        React.createElement('div', { style: hint }, LABELS.textHint),
+        React.createElement('div', { style: hint }, t('textHint')),
         React.createElement('div', { style: { display: 'flex', gap: '8px', alignItems: 'center' } },
           React.createElement('button', {
             style: primary,
             disabled: !writable || status.kind === 'busy',
             onClick: () => void save(),
-          }, LABELS.save),
+          }, t('save')),
           React.createElement('button', {
             style: button,
             disabled: !writable || status.kind === 'busy',
             onClick: () => void reset(),
-          }, LABELS.reset),
-          status.message
-            ? React.createElement('span', { style: messageStyle(status.kind) }, status.message)
+          }, t('reset')),
+          status.key
+            ? React.createElement('span', { style: messageStyle(status.kind) }, statusText(t, status))
             : null,
-          !writable ? React.createElement('span', { style: hint }, LABELS.readonly) : null,
+          !writable ? React.createElement('span', { style: hint }, t('readonly')) : null,
         ),
       )
     }
 
     function apply(ctx) {
       const slots = ctx.get('slots')
-      if (!React || !slots) return
+      const locale = ctx.get('locale')
+      if (!React || !slots || !locale) return
+
+      const t = locale.bind(LOCALE_NS)
+      ctx.effect(() => locale.register(LOCALE_NS, { en, zh }), 'custom-prompt: dictionaries')
 
       const scope = ctx.configForms.get(NAMESPACE)
 
@@ -166,11 +195,12 @@ window.__ModuleLoader__.load({
         name: 'settings.section',
         id: 'custom-prompt',
         order: 60,
-        label: () => LABELS.nav,
-      }, () => React.createElement(PromptForm, { scope })))
+        label: () => t('nav'),
+        locale: LOCALE_NS,
+      }, (props) => React.createElement(PromptForm, { scope, t: (props && props.t) || t })))
     }
 
-    const inject = ['slots', 'configForms']
+    const inject = ['slots', 'configForms', 'locale']
 
     exports.apply = apply
     exports.inject = inject

@@ -10,6 +10,7 @@ Off by default. Enable it in **Settings > Custom Prompt**, write whatever you wa
 - When enabled, registers `text` as a system-prompt section at order 50, which places it after the persona and before tool guidance.
 - Re-registers the section live whenever the setting changes. No restart needed to apply prompt edits.
 - Adds a **Custom Prompt** page to the Settings panel: an enable toggle, a multiline text field, Save and Reset.
+- Localizes the page and the plugin's display metadata into every language it ships, following the DSH language setting.
 
 The section is registered in the **global** prompt layer, so it applies to every agent preset (standard, code, minimal, cordis, and any custom preset), not just one mode.
 
@@ -19,7 +20,7 @@ Build a tarball and add it to your profile:
 
 ```sh
 npm pack
-dsh plugin --profile web add file:/absolute/path/to/dsh-custom-prompt-1.0.0.tgz
+dsh plugin --profile web add file:/absolute/path/to/dsh-custom-prompt-1.2.0.tgz
 ```
 
 Then add the bundle to the profile manifest in `~/.dsh/profiles/web/package.json`:
@@ -57,6 +58,17 @@ The plugin carries its own `cordis.patch.yml`, which inserts the `custom-prompt`
 
 Your text is stored in the `custom-prompt` section of `~/.dsh/settings.yaml`, so it survives restarts.
 
+## Languages
+
+The Settings page and the plugin's title/description follow the DSH language preference (**Settings > General > Language**), not the browser language. Shipped locales:
+
+| Locale | Contents |
+| --- | --- |
+| `en` | English labels, hints, and status messages |
+| `zh` | Simplified Chinese labels, hints, and status messages |
+
+To add another language, register its dictionary in `client.js` (the `en`/`zh` pair shows the shape) and add the corresponding `locale/<id>.json` metadata file. The language itself must already be offered by DSH: the built-in list is `en` and `zh`; other languages require a language-pack plugin to call `locale.addLanguage` first.
+
 ## Prompt variables
 
 The plugin registers one variable, usable anywhere in the section text:
@@ -81,7 +93,8 @@ DSH renders prompt variables strictly. Any other `{{reference}}` you write is un
 | File | Purpose |
 | --- | --- |
 | `index.js` | Host half: settings namespace, prompt section registration, live re-registration |
-| `client.js` | Browser half: the Settings page |
+| `client.js` | Browser half: the localized Settings page |
+| `locale/*.json` | Plugin title and description per locale |
 | `cordis.patch.yml` | Bundle patch that inserts the plugin row |
 | `package.json` | Package manifest, `dsh.bundle.patch`, and `dsh.client` declarations |
 
